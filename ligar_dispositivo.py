@@ -1,43 +1,64 @@
-import irc.bot
+import socket
 import time
 
-class RelayControlBot(irc.bot.SingleServerIRCBot):
-    def __init__(self, server, port, channel, nickname):
-        self.channel = channel
-        self.nickname = nickname
-        irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
+# Configurações do servidor IRC
+HOST = "192.168.1.101"  # IP do servidor IRC
+PORT = 6668  # Porta do servidor IRC
+CHANNEL = "#sala"  # Canal IRC onde o relé responde
 
-    def on_welcome(self, c, e):
-        print(f"Conectado ao servidor {server}:{port}. Entrando no canal {self.channel}...")
-        c.join(self.channel)
+# Função para enviar mensagem IRC
+def send_message(sock, message):
+    sock.send(f"PRIVMSG {CHANNEL} :{message}\r\n".encode('utf-8'))
 
-    def on_pubmsg(self, c, e):
-        message = e.arguments[0].lower()
+# Conectar ao servidor IRC
+def connect_irc():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+    
+    # Enviar o comando de identificação
+    sock.send(f"NICK relé_bot\r\n".encode('utf-8'))
+    sock.send(f"USER relé_bot 0 * :rele_bot\r\n".encode('utf-8'))
+    
+    return sock
 
-        if message == "ligar":
-            self.control_relay("ligar")
-        elif message == "desligar":
-            self.control_relay("desligar")
-        else:
-            print(f"Comando desconhecido: {message}")
+# Função para ligar o relé
+def ligar(sock):
+    send_message(sock, "ligar")  # Enviar comando para ligar a lâmpada
+    print("Comando: Ligar")
 
-    def control_relay(self, command):
-        if command == "ligar":
-            print("Enviando comando para ligar o relé...")
-            # Enviar comando IRC para ligar o relé
-            self.connection.privmsg(self.channel, "ligar")  # Substitua "ligar" pelo comando correto do seu relé
-            print("Lâmpada ligada!")
+# Função para desligar o relé
+def desligar(sock):
+    send_message(sock, "desligar")  # Enviar comando para desligar a lâmpada
+    print("Comando: Desligar")
 
-        elif command == "desligar":
-            print("Enviando comando para desligar o relé...")
-            # Enviar comando IRC para desligar o relé
-            self.connection.privmsg(self.channel, "desligar")  # Substitua "desligar" pelo comando correto do seu relé
-            print("Lâmpada desligada!")
+# Função para ligar usando 'on'
+def ligar_on(sock):
+    send_message(sock, "on")  # Enviar comando 'on' para ligar a lâmpada
+    print("Comando: On")
+
+# Função para desligar usando 'off'
+def desligar_off(sock):
+    send_message(sock, "off")  # Enviar comando 'off' para desligar a lâmpada
+    print("Comando: Off")
+
+# Testar os comandos
+def test_commands():
+    sock = connect_irc()
+
+    # Esperar a conexão ser estabelecida
+    time.sleep(5)
+
+    # Testar os comandos
+    ligar(sock)  # Testar comando 'ligar'
+    time.sleep(2)
+    desligar(sock)  # Testar comando 'desligar'
+    time.sleep(2)
+    ligar_on(sock)  # Testar comando 'on'
+    time.sleep(2)
+    desligar_off(sock)  # Testar comando 'off'
+
+    # Fechar a conexão
+    sock.close()
 
 if __name__ == "__main__":
-    server = "192.168.1.101"  # IP do servidor IRC
-    port = 6668  # Porta do servidor IRC
-    channel = "#sala"  # Canal IRC
-    nickname = "RelayBot"  # Nome do bot no IRC
-    bot = RelayControlBot(server, port, channel, nickname)
-    bot.start()
+    test_commands()
