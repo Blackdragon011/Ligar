@@ -43,7 +43,7 @@ def connect_to_irc():
 
                 if "PING" in response:
                     irc.send("PONG :Pong\r\n".encode())  # Responde ao PING para manter a conexão ativa
-
+                
                 # Verifica os comandos de controle de luz (on / off)
                 if "on" in response.lower():
                     print(f"Luz no canal {channel} ligada!")
