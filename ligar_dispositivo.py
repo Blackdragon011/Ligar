@@ -1,88 +1,74 @@
 import socket
 import time
 
-# Função para conectar ao IRC
-def conectar_irc():
-    try:
-        # Endereço do servidor e a porta
-        irc_server = "192.168.1.101"
-        irc_port = 6668
-        irc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        irc_socket.connect((irc_server, irc_port))
+# Configurações de rede e IRC
+SERVER = '192.168.1.101'  # IP do relé
+PORT = 6668  # Porta de comunicação do relé
+CHANNELS = ['#Luz_de_fora', '#luz_externa', '#luz_fora']  # Canais para controle
 
-        # Entrar com NICK e USER
-        irc_socket.send(bytes("NICK rele_bot\r\n", "UTF-8"))
-        irc_socket.send(bytes("USER nome_do_usuario 0 * :Controle\r\n", "UTF-8"))
-        print(f"Conectado ao servidor {irc_server} na porta {irc_port}")
+# Defina seu Nickname e Usuário
+NICKNAME = 'rele_bot'
+USER = 'nome_do_usuario'
 
-        return irc_socket
+def irc_send(socket, message):
+    """Envia uma mensagem para o servidor IRC"""
+    socket.send(f"{message}\r\n".encode('utf-8'))
 
-    except Exception as e:
-        print(f"Erro ao conectar ao servidor: {e}")
-        return None
-
-# Função para entrar no canal
-def entrar_no_canal(irc_socket, canal):
-    try:
-        # Enviar comando JOIN para entrar no canal
-        irc_socket.send(bytes(f"JOIN {canal}\r\n", "UTF-8"))
-        print(f"Entrando no canal {canal}")
-
-        # Esperar resposta do servidor (pode demorar)
-        response = irc_socket.recv(2048).decode("utf-8")
-        print("Resposta do servidor:", response)
-
-        if "JOIN" in response:
-            print(f"Conectado ao canal {canal}")
-        else:
-            print(f"Falha ao entrar no canal {canal}, resposta: {response}")
-            return False
-
-        return True
-
-    except Exception as e:
-        print(f"Erro ao entrar no canal {canal}: {e}")
-        return False
-
-# Função para enviar comandos de controle (on/off)
-def enviar_comando(irc_socket, canal, comando):
-    try:
-        # Enviar comando de ligar/desligar
-        comando_ir = f"{comando}\r\n"
-        irc_socket.send(bytes(f"PRIVMSG {canal} :{comando_ir}", "UTF-8"))
-        print(f"Comando '{comando}' enviado para o canal {canal}")
-
-        # Esperar resposta do servidor
-        response = irc_socket.recv(2048).decode("utf-8")
-        print(f"Resposta recebida do canal {canal}: {response}")
-
-    except Exception as e:
-        print(f"Erro ao enviar comando {comando} para o canal {canal}: {e}")
-
-# Função principal
-def main():
-    # Conectar ao IRC
-    irc_socket = conectar_irc()
-    if irc_socket is None:
-        return
-
-    canais = ["#Luz_de_fora", "#luz_externa", "#luz_fora"]
+def irc_connect():
+    """Conecta-se ao servidor IRC e entra no canal"""
+    irc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    irc_socket.connect((SERVER, PORT))
     
-    # Entrar nos canais
-    for canal in canais:
-        if not entrar_no_canal(irc_socket, canal):
-            continue  # Se falhar em um canal, tenta o próximo
+    # Envia as informações de identificação
+    irc_send(irc_socket, f'NICK {NICKNAME}')
+    irc_send(irc_socket, f'USER {USER} 0 * :Controle')
+    
+    # Aguarda um pouco para garantir que a conexão seja estabelecida
+    time.sleep(2)
+    
+    # Entra nos canais
+    for channel in CHANNELS:
+        irc_send(irc_socket, f'JOIN {channel}')
+        print(f"Entrando no canal {channel}")
+        time.sleep(1)
+    
+    return irc_socket
 
-    # Testar os comandos on/off nos canais
-    comandos = ["on", "off"]
-    for comando in comandos:
-        for canal in canais:
-            enviar_comando(irc_socket, canal, comando)
-            time.sleep(2)  # Aguarda 2 segundos antes de enviar o próximo comando
+def send_command(irc_socket, channel, command):
+    """Envia o comando 'on' ou 'off' para o canal"""
+    irc_send(irc_socket, f'PRIVMSG {channel} :{command}')
 
-    # Fechar a conexão
+def manual_command(irc_socket):
+    """Permite que o usuário envie comandos manualmente"""
+    while True:
+        command = input("Digite o comando (on, off ou 'sair' para sair): ").strip().lower()
+        
+        if command == 'on':
+            print("Enviando comando para ligar a lâmpada...")
+            for channel in CHANNELS:
+                send_command(irc_socket, channel, 'on')
+        elif command == 'off':
+            print("Enviando comando para desligar a lâmpada...")
+            for channel in CHANNELS:
+                send_command(irc_socket, channel, 'off')
+        elif command == 'sair':
+            print("Saindo do programa.")
+            break
+        else:
+            print("Comando inválido! Use 'on', 'off' ou 'sair'.")
+
+def main():
+    # Conecta ao servidor IRC
+    irc_socket = irc_connect()
+    
+    # Aguarda alguns segundos para garantir que a conexão esteja estável
+    time.sleep(5)
+    
+    # Permite que o usuário envie comandos manualmente
+    manual_command(irc_socket)
+    
+    # Fecha a conexão
     irc_socket.close()
-    print("Conexão com o servidor IRC encerrada.")
 
 if __name__ == "__main__":
     main()
