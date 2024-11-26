@@ -5,7 +5,7 @@ import time
 server_ip = '192.168.1.101'
 port = 6668
 
-# Nomes de canal atualizados
+# Nomes de canal
 channels = ['#Luz_de_fora', '#luz_externa', '#luz_fora']
 
 # Configuração do nick
@@ -38,19 +38,23 @@ def connect_to_irc():
         # Aguardar comandos ou saída
         while True:
             response = irc.recv(2048).decode()
-            print(response)
+            print(response)  # Exibe a resposta do servidor IRC
+            
             if "PING" in response:
                 irc.send("PONG :Pong\r\n".encode())  # Responde ao PING para manter a conexão ativa
             
-            # Adicionar condições para ligar/desligar conforme necessário
-            if "ligar" in response.lower():
+            # Comandos para ligar/desligar a luz
+            if "on" in response.lower() or "ligar" in response.lower():
                 print("Luz ligada!")
-                # Enviar comando para ligar a luz
-                # (aqui você pode adicionar o comando específico para ligar a lâmpada ou relé)
-            elif "desligar" in response.lower():
+                # Substitua com o comando para ligar a luz ou relé
+                # Exemplo: enviar um comando para ligar a lâmpada/relé
+                irc.send(f"PRIVMSG {channels[0]} :Ligar luz\r\n".encode())  # Enviar comando para ligar luz
+            elif "off" in response.lower() or "desligar" in response.lower():
                 print("Luz desligada!")
-                # Enviar comando para desligar a luz
-                # (aqui você pode adicionar o comando específico para desligar a lâmpada ou relé)
+                # Substitua com o comando para desligar a luz ou relé
+                # Exemplo: enviar um comando para desligar a lâmpada/relé
+                irc.send(f"PRIVMSG {channels[0]} :Desligar luz\r\n".encode())  # Enviar comando para desligar luz
+
             time.sleep(1)  # Atraso para evitar sobrecarga do servidor
     except Exception as e:
         print(f"Erro ao conectar: {e}")
