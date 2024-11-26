@@ -9,7 +9,7 @@ port = 6668
 channel = '#luz_externa'
 
 # Configuração do nick
-nickname = 'rele_bot'
+nickname = 'Luz_externa'
 
 # Função para se conectar e enviar comandos
 def connect_to_irc():
