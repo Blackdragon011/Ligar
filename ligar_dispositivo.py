@@ -4,11 +4,11 @@ import time
 # Configurações do servidor IRC
 HOST = "192.168.1.101"  # IP do servidor IRC
 PORT = 6668  # Porta do servidor IRC
-CHANNEL = "#sala"  # Canal IRC onde o relé responde
+CHANNELS = ["#luz_sala", "#sala", "#luz_da_sala"]  # Canais personalizados
 
-# Função para enviar mensagem IRC
-def send_message(sock, message):
-    sock.send(f"PRIVMSG {CHANNEL} :{message}\r\n".encode('utf-8'))
+# Função para enviar mensagem IRC para múltiplos canais
+def send_message(sock, channel, message):
+    sock.send(f"PRIVMSG {channel} :{message}\r\n".encode('utf-8'))
 
 # Conectar ao servidor IRC
 def connect_irc():
@@ -21,27 +21,31 @@ def connect_irc():
     
     return sock
 
-# Função para ligar o relé
+# Função para ligar o relé em múltiplos canais
 def ligar(sock):
-    send_message(sock, "ligar")  # Enviar comando para ligar a lâmpada
-    print("Comando: Ligar")
+    for channel in CHANNELS[:3]:  # Limitar para no máximo 3 canais
+        send_message(sock, channel, "ligar")  # Enviar comando para ligar a lâmpada
+        print(f"Comando: Ligar no canal {channel}")
 
-# Função para desligar o relé
+# Função para desligar o relé em múltiplos canais
 def desligar(sock):
-    send_message(sock, "desligar")  # Enviar comando para desligar a lâmpada
-    print("Comando: Desligar")
+    for channel in CHANNELS[:3]:  # Limitar para no máximo 3 canais
+        send_message(sock, channel, "desligar")  # Enviar comando para desligar a lâmpada
+        print(f"Comando: Desligar no canal {channel}")
 
-# Função para ligar usando 'on'
+# Função para ligar usando 'on' em múltiplos canais
 def ligar_on(sock):
-    send_message(sock, "on")  # Enviar comando 'on' para ligar a lâmpada
-    print("Comando: On")
+    for channel in CHANNELS[:3]:  # Limitar para no máximo 3 canais
+        send_message(sock, channel, "on")  # Enviar comando 'on' para ligar a lâmpada
+        print(f"Comando: On no canal {channel}")
 
-# Função para desligar usando 'off'
+# Função para desligar usando 'off' em múltiplos canais
 def desligar_off(sock):
-    send_message(sock, "off")  # Enviar comando 'off' para desligar a lâmpada
-    print("Comando: Off")
+    for channel in CHANNELS[:3]:  # Limitar para no máximo 3 canais
+        send_message(sock, channel, "off")  # Enviar comando 'off' para desligar a lâmpada
+        print(f"Comando: Off no canal {channel}")
 
-# Testar os comandos
+# Testar os comandos em múltiplos canais
 def test_commands():
     sock = connect_irc()
 
