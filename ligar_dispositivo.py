@@ -29,33 +29,40 @@ def connect_to_irc():
         irc.send(f'USER {nickname} 0 * :Controle\r\n'.encode())
         time.sleep(2)  # Atraso para garantir que o USER seja aceito
         
-        # Entra nos canais
+        # Testa os canais um por vez
         for channel in channels:
+            # Entra no canal atual
             irc.send(f'JOIN {channel}\r\n'.encode())
             print(f"Entrando no canal {channel}")
             time.sleep(2)  # Atraso entre as tentativas de entrada
-
-        # Aguardar comandos ou saída
-        while True:
-            response = irc.recv(2048).decode()
-            print(response)  # Exibe a resposta do servidor IRC
             
-            if "PING" in response:
-                irc.send("PONG :Pong\r\n".encode())  # Responde ao PING para manter a conexão ativa
-            
-            # Comandos para ligar/desligar a luz
-            if "on" in response.lower() or "ligar" in response.lower():
-                print("Luz ligada!")
-                # Substitua com o comando para ligar a luz ou relé
-                # Exemplo: enviar um comando para ligar a lâmpada/relé
-                irc.send(f"PRIVMSG {channels[0]} :Ligar luz\r\n".encode())  # Enviar comando para ligar luz
-            elif "off" in response.lower() or "desligar" in response.lower():
-                print("Luz desligada!")
-                # Substitua com o comando para desligar a luz ou relé
-                # Exemplo: enviar um comando para desligar a lâmpada/relé
-                irc.send(f"PRIVMSG {channels[0]} :Desligar luz\r\n".encode())  # Enviar comando para desligar luz
+            # Aguardar comandos ou saída
+            while True:
+                response = irc.recv(2048).decode()
+                print(response)  # Exibe a resposta do servidor IRC
+                
+                if "PING" in response:
+                    irc.send("PONG :Pong\r\n".encode())  # Responde ao PING para manter a conexão ativa
+                
+                # Verifica os comandos de controle de luz
+                if "on" in response.lower() or "ligar" in response.lower():
+                    print(f"Luz ligada no canal {channel}!")
+                    # Substitua com o comando real para ligar a luz ou relé
+                    irc.send(f"PRIVMSG {channel} :Ligar luz\r\n".encode())  # Enviar comando para ligar luz
+                elif "off" in response.lower() or "desligar" in response.lower():
+                    print(f"Luz desligada no canal {channel}!")
+                    # Substitua com o comando real para desligar a luz ou relé
+                    irc.send(f"PRIVMSG {channel} :Desligar luz\r\n".encode())  # Enviar comando para desligar luz
 
-            time.sleep(1)  # Atraso para evitar sobrecarga do servidor
+                # Condição para sair do loop se um comando específico for dado
+                if "sair" in response.lower():
+                    print(f"Saindo do canal {channel}...")
+                    irc.send("PONG :Pong\r\n".encode())  # Envia para manter a conexão
+                    break  # Sai do loop do canal atual
+                
+                time.sleep(1)  # Atraso para evitar sobrecarga do servidor
+            time.sleep(2)  # Atraso entre a troca de canais
+
     except Exception as e:
         print(f"Erro ao conectar: {e}")
         irc.close()
