@@ -1,15 +1,16 @@
-import requests
+import irc.client
 
-def ligar_dispositivo(url):
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            print("Dispositivo ligado com sucesso!")
-        else:
-            print("Falha ao ligar o dispositivo. Status:", response.status_code)
-    except requests.exceptions.RequestException as e:
-        print(f"Erro ao conectar: {e}")
+def on_connect(connection, event):
+    connection.join("#canal")
 
-# URL do dispositivo (exemplo de IP local)
-url_do_dispositivo = "http://192.168.1.100/ligar"
-ligar_dispositivo(url_do_dispositivo)
+def on_join(connection, event):
+    connection.privmsg("#canal", "Olá, servidor IRC!")
+
+client = irc.client.Reactor()
+try:
+    client.server().connect("192.168.1.101", 6668, "nome_de_usuario")
+except irc.client.ServerConnectionError as e:
+    print("Falha na conexão:", e)
+    exit(1)
+
+client.process_forever()
